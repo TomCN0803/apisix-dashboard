@@ -36,7 +36,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "manager-api",
 	Short: "Apache APISIX Manager API",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(*cobra.Command, []string) error {
 		err := manageAPI()
 		return err
 	},
@@ -96,12 +96,14 @@ func etcdConnectionChecker() context.CancelFunc {
 
 	go func() {
 		etcdClient := storage.GenEtcdStorage().GetClient()
+		tk := time.NewTicker(10 * time.Second)
+		defer tk.Stop()
 		for {
 			select {
-			case <-time.Tick(10 * time.Second):
+			case <-tk.C:
 				sCtx, sCancel := context.WithTimeout(ctx, 5*time.Second)
+				defer sCancel()
 				err := etcdClient.Sync(sCtx)
-				sCancel()
 				if err != nil {
 					unavailableTimes++
 					log.Errorf("etcd connection loss detected, times: %d", unavailableTimes)
@@ -132,13 +134,12 @@ func etcdConnectionChecker() context.CancelFunc {
 
 	// Timed re-initialization when etcd watch actively exits
 	go func() {
-		for {
-			select {
-			case <-time.Tick(2 * time.Minute):
-				err := store.ReInit()
-				if err != nil {
-					log.Errorf("resource re-initialize failed, err: %v", err)
-				}
+		tk := time.NewTicker(2 * time.Minute)
+		defer tk.Stop()
+		for range tk.C {
+			err := store.ReInit()
+			if err != nil {
+				log.Errorf("resource re-initialize failed, err: %v", err)
 			}
 		}
 	}()

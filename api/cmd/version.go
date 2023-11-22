@@ -26,7 +26,7 @@ func newVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "show manager-api version",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(*cobra.Command, []string) {
 			utils.PrintVersion()
 		},
 	}

@@ -71,3 +71,7 @@ web/public/monaco-editor/
 
 # .env
 .env*
+
+# Golang workspace
+go.work
+go.work.sum
